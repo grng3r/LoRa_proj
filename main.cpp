@@ -14,11 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <cstring>
 #include <stdio.h>
 
 #include "lorawan/LoRaWANInterface.h"
 #include "lorawan/system/lorawan_data_structures.h"
 #include "events/EventQueue.h"
+#include "sensor.hpp"
 
 // Application helpers
 #include "trace_helper.h"
@@ -84,11 +86,12 @@ static uint8_t APP_KEY[] = { 0xf3,0x1c,0x2e,0x8b,0xc6,0x71,0x28,0x1d,0x51,0x16,0
 
 static void update_tx_buffer()
 {
-    static int32_t sensor_value= 0;
+    sensorData_t data;
 
-    packet_len = sprintf((char *) tx_buffer, "%d", sensor_value);
+    sensors_update(&data);
 
-    sensor_value++;
+    memcpy(rx_buffer, &data, sizeof(sensorData_t));
+    packet_len = sizeof(sensorData_t);
 }
 
 
@@ -149,6 +152,9 @@ int main(void)
     }
 
     printf("\r\n Connection - In Progress ...\r\n");
+    
+    printf("\r\n Init sensors ...\r\n");
+    sensors_init();
 
     ev_queue.call_every(2000, update_tx_buffer);
 

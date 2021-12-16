@@ -9,6 +9,7 @@
 #include "TCS3472_I2C.h"
 #include "MBed_Adafruit_GPS.h"
 #include "RGB.h"
+#include "sensor.hpp"
 
 //using namespace std::chrono;
 //DigitalOut test_led(LED1);
@@ -49,8 +50,9 @@ typedef struct TempHum_t{
 };
 
 
-TempHum_t tempHum_r(TempHum_t th)
+TempHum_t tempHum_r()
  {
+	TempHum_t th;
     th.temp = 0;
     th.hum = 0;
     
@@ -176,7 +178,7 @@ void init_rgb(void){
 
 int *read_rgb(void){
     //init_rgb();
-    int rgb_readings[3]; // Declare a 4 element array to store RGB sensor readings
+    static int rgb_readings[4]; // Declare a 4 element array to store RGB sensor readings
 
     rgb_sensor.getAllColors( rgb_readings ); // read the sensor to get red, green, and blue color data along with overall brightness
 	//printf("COLOR SENSOR: clear: %d, red : %d,green : %d, blue: %d ",rgb_readings[0],rgb_readings[1],rgb_readings[2],rgb_readings[3]);
@@ -560,3 +562,22 @@ gps_Serial = new UnbufferedSerial(PA_9, PA_10,9600); //serial object for use w/ 
 	}		
 }**/
 
+void sensors_init()
+{
+	tempHum_init();
+	init_rgb();
+}
+
+void sensors_update(sensorData_t* data)
+{
+	TempHum_t th = tempHum_r();
+	int* rgb = read_rgb();
+
+	data->light = read_light();
+	data->light = read_soil();
+	data->temp = th.temp;
+	data->hum = th.hum;
+	data->r = rgb[0];
+	data->g = rgb[1];
+	data->b = rgb[2];
+}
