@@ -21,7 +21,6 @@
 #include "events/EventQueue.h"
 
 // Application helpers
-#include "DummySensor.h"
 #include "trace_helper.h"
 #include "lora_radio_helper.h"
 
@@ -31,6 +30,7 @@ using namespace events;
 // This example only communicates with much shorter messages (<30 bytes).
 // If longer messages are used, these buffers must be changed accordingly.
 uint8_t tx_buffer[30];
+uint16_t packet_len;
 uint8_t rx_buffer[30];
 
 /*
@@ -50,15 +50,7 @@ uint8_t rx_buffer[30];
  */
 #define CONFIRMED_MSG_RETRY_COUNTER     3
 
-/**
- * Dummy pin for dummy sensor
- */
-#define PC_9                            0
 
-/**
- * Dummy sensor class object
- */
-DS1820  ds1820(PC_9);
 
 /**
 * This event queue is the global event queue for both the
@@ -89,6 +81,17 @@ static lorawan_app_callbacks_t callbacks;
 static uint8_t DEV_EUI[] = { 0x71, 0x39, 0x32, 0x35, 0x59, 0x37, 0x91, 0x94 };
 static uint8_t APP_EUI[] = { 0x70, 0xb3, 0xd5, 0x7e, 0xd0, 0x00, 0xfc, 0xda };
 static uint8_t APP_KEY[] = { 0xf3,0x1c,0x2e,0x8b,0xc6,0x71,0x28,0x1d,0x51,0x16,0xf0,0x8f,0xf0,0xb7,0x92,0x8f };
+
+static void update_tx_buffer()
+{
+    static int32_t sensor_value= 0;
+
+    packet_len = sprintf((char *) tx_buffer, "%d", sensor_value);
+
+    sensor_value++;
+}
+
+
 /**
  * Entry point for application
  */
@@ -147,6 +150,8 @@ int main(void)
 
     printf("\r\n Connection - In Progress ...\r\n");
 
+    ev_queue.call_every(2000, update_tx_buffer);
+
     // make your event queue dispatching events forever
     ev_queue.dispatch_forever();
 
@@ -158,22 +163,7 @@ int main(void)
  */
 static void send_message()
 {
-    uint16_t packet_len;
     int16_t retcode;
-    int32_t sensor_value;
-
-    if (ds1820.begin()) {
-        ds1820.startConversion();
-        sensor_value = ds1820.read();
-        printf("\r\n Dummy Sensor Value = %d \r\n", sensor_value);
-        ds1820.startConversion();
-    } else {
-        printf("\r\n No sensor found \r\n");
-        return;
-    }
-
-    packet_len = sprintf((char *) tx_buffer, "%d",
-                         sensor_value);
 
     retcode = lorawan.send(MBED_CONF_LORA_APP_PORT, tx_buffer, packet_len,
                            MSG_UNCONFIRMED_FLAG);
