@@ -20,7 +20,7 @@
 #include "lorawan/LoRaWANInterface.h"
 #include "lorawan/system/lorawan_data_structures.h"
 #include "events/EventQueue.h"
-#include "sensor.hpp"
+#include "sensors/sensor.hpp"
 
 // Application helpers
 #include "trace_helper.h"
@@ -156,7 +156,7 @@ int main(void)
     printf("\r\n Init sensors ...\r\n");
     sensors_init();
 
-    ev_queue.call_every(2000, update_tx_buffer);
+    //ev_queue.call_every(2000, update_tx_buffer);
 
     // make your event queue dispatching events forever
     ev_queue.dispatch_forever();
@@ -170,6 +170,7 @@ int main(void)
 static void send_message()
 {
     int16_t retcode;
+    update_tx_buffer();
 
     retcode = lorawan.send(MBED_CONF_LORA_APP_PORT, tx_buffer, packet_len,
                            MSG_UNCONFIRMED_FLAG);
